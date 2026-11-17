@@ -12,6 +12,25 @@ struct PanelWebView: UIViewRepresentable {
         cfg.allowsInlineMediaPlayback = true
         cfg.websiteDataStore = .default()
 
+        // 让前端一打开就认为是"已连接同源后端"，不再弹「后端连接配置」
+        let bootstrap = """
+        (function(){
+          try {
+            var name = 'Panel';
+            localStorage.setItem('backendConfigured', 'true');
+            localStorage.setItem('hostAPI', JSON.stringify({
+              current: name,
+              apis: [{ name: name, url: location.origin }]
+            }));
+          } catch (e) {}
+        })();
+        """
+        cfg.userContentController.addUserScript(
+            WKUserScript(source: bootstrap,
+                         injectionTime: .atDocumentStart,
+                         forMainFrameOnly: true)
+        )
+
         let web = WKWebView(frame: .zero, configuration: cfg)
         web.navigationDelegate = context.coordinator
         web.uiDelegate = context.coordinator
