@@ -10,6 +10,7 @@ struct RootView: View {
     @State private var reloadToken = UUID()
     @State private var expanded = false
     @State private var webRef: WKWebView?
+    @State private var showActions = false
     @Namespace private var glassNS
 
     private let brand = Color(red: 0.26, green: 0.72, blue: 0.51)
@@ -64,12 +65,20 @@ struct RootView: View {
                     .transition(.opacity)
             }
         }
-        .overlay(alignment: .topTrailing) {
+        .overlay(alignment: .bottomTrailing) {
             if config.isConfigured {
-                controlCluster
-                    .padding(.top, 8)
+                menuButton
+                    .padding(.bottom, 15)
                     .padding(.trailing, 12)
             }
+        }
+        .sheet(isPresented: $showActions) {
+            ActionSheetView(
+                brand: brand,
+                onRefresh: { reloadToken = UUID() },
+                onSearch: { triggerSearch() },
+                onSettings: { showSettings = true }
+            )
         }
         .sheet(isPresented: $showSettings) {
             SettingsView().environmentObject(config)
@@ -89,63 +98,16 @@ struct RootView: View {
 
     // MARK: - 液态玻璃控制组
 
-    private var controlCluster: some View {
-        GlassEffectContainer(spacing: 12) {
-            HStack(spacing: 10) {
-                if expanded {
-                    Button {
-                        reloadToken = UUID()
-                        withAnimation(.bouncy(duration: 0.35)) { expanded = false }
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 14, weight: .semibold))
-                            .frame(width: 38, height: 38)
-                    }
-                    .buttonStyle(.plain)
-                    .glassEffect(.regular.interactive(), in: Circle())
-                    .glassEffectID("refresh", in: glassNS)
-                    .transition(.scale.combined(with: .opacity))
-
-                    Button {
-                        withAnimation(.bouncy(duration: 0.35)) { expanded = false }
-                        triggerSearch()
-                    } label: {
-                        Image(systemName: "magnifyingglass")
-                            .font(.system(size: 14, weight: .semibold))
-                            .frame(width: 38, height: 38)
-                    }
-                    .buttonStyle(.plain)
-                    .glassEffect(.regular.interactive(), in: Circle())
-                    .glassEffectID("search", in: glassNS)
-                    .transition(.scale.combined(with: .opacity))
-
-                    Button {
-                        withAnimation(.bouncy(duration: 0.35)) { expanded = false }
-                        showSettings = true
-                    } label: {
-                        Image(systemName: "gearshape.fill")
-                            .font(.system(size: 14, weight: .semibold))
-                            .frame(width: 38, height: 38)
-                    }
-                    .buttonStyle(.plain)
-                    .glassEffect(.regular.interactive(), in: Circle())
-                    .glassEffectID("settings", in: glassNS)
-                    .transition(.scale.combined(with: .opacity))
-                }
-
-                Button {
-                    withAnimation(.bouncy(duration: 0.4)) { expanded.toggle() }
-                } label: {
-                    Image(systemName: expanded ? "xmark" : "ellipsis")
-                        .font(.system(size: 15, weight: .bold))
-                        .frame(width: 34, height: 34)
-                        .contentTransition(.symbolEffect(.replace))
-                }
-                .buttonStyle(.plain)
-                .glassEffect(.regular.interactive(), in: Circle())
-                .glassEffectID("toggle", in: glassNS)
-            }
+    private var menuButton: some View {
+        Button {
+            showActions = true
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: 18, weight: .bold))
+                .frame(width: 48, height: 48)
         }
+        .buttonStyle(.plain)
+        .glassEffect(.regular.interactive(), in: Circle())
     }
 }
 
