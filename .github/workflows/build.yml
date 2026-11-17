@@ -6,12 +6,15 @@ on:
 
 jobs:
   build:
-    runs-on: macos-15
+    runs-on: xcode-27
     steps:
       - uses: actions/checkout@v4
 
       - name: Install XcodeGen
         run: brew install xcodegen
+
+      - name: Toolchain
+        run: xcodebuild -version; sw_vers
 
       - name: Generate project
         run: xcodegen generate
