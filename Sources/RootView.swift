@@ -1,4 +1,5 @@
 import SwiftUI
+import WebKit
 
 struct RootView: View {
     @EnvironmentObject private var config: AppConfig
