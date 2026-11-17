@@ -7,147 +7,204 @@ struct RootView: View {
     @State private var loaded = false
     @State private var showSettings = false
     @State private var reloadToken = UUID()
+    @State private var expanded = false
+    @Namespace private var glassNS
 
     private let brand = Color(red: 0.26, green: 0.72, blue: 0.51)
 
     var body: some View {
         ZStack {
-            Color(uiColor: .systemGroupedBackground).ignoresSafeArea()
+            brandMesh.ignoresSafeArea()
 
             if config.isConfigured {
                 PanelWebView(reloadToken: reloadToken,
                              progress: $progress,
                              onFirstLoad: {
-                                 withAnimation(.easeOut(duration: 0.4)) { loaded = true }
+                                 withAnimation(.easeOut(duration: 0.45)) { loaded = true }
                              })
                     .ignoresSafeArea(edges: .bottom)
                     .transition(.opacity)
             }
 
-            // 顶部细进度条
+            // 顶部加载进度条
             VStack(spacing: 0) {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         Color.clear
                         if progress < 1 {
-                            Rectangle()
+                            Capsule()
                                 .fill(brand)
-                                .frame(width: max(0, geo.size.width * progress), height: 2.5)
+                                .frame(width: max(0, geo.size.width * progress), height: 3)
                                 .animation(.easeOut(duration: 0.25), value: progress)
                         }
                     }
+                    .padding(.horizontal, 0)
                 }
-                .frame(height: 2.5)
+                .frame(height: 3)
                 Spacer()
             }
             .ignoresSafeArea()
 
             if config.isConfigured && !loaded {
                 SplashView(brand: brand)
-                    .transition(.opacity)
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
             }
 
             if !config.isConfigured {
                 EmptyStateView(brand: brand) { showSettings = true }
+                    .transition(.opacity)
             }
         }
         .overlay(alignment: .topTrailing) {
             if config.isConfigured {
                 controlCluster
-                    .padding(.top, 6)
-                    .padding(.trailing, 8)
+                    .padding(.top, 8)
+                    .padding(.trailing, 12)
             }
         }
         .sheet(isPresented: $showSettings) {
             SettingsView().environmentObject(config)
         }
+        .tint(brand)
     }
 
-    private var controlCluster: some View {
-        Menu {
-            Button {
-                reloadToken = UUID()
-            } label: {
-                Label("刷新", systemImage: "arrow.clockwise")
-            }
-            Button {
-                showSettings = true
-            } label: {
-                Label("设置", systemImage: "gearshape")
-            }
-        } label: {
-            Image(systemName: "ellipsis")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(.primary.opacity(0.85))
-                .frame(width: 34, height: 34)
-                .background(.ultraThinMaterial, in: Circle())
-                .overlay(Circle().strokeBorder(.white.opacity(0.18), lineWidth: 0.5))
-                .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
+    private var brandMesh: some View {
+        ZStack {
+            Color(uiColor: .systemBackground)
+            RadialGradient(colors: [brand.opacity(0.28), .clear],
+                           center: .topLeading, startRadius: 20, endRadius: 520)
+            RadialGradient(colors: [Color.blue.opacity(0.18), .clear],
+                           center: .bottomTrailing, startRadius: 20, endRadius: 620)
         }
-        .opacity(0.85)
+    }
+
+    // MARK: - 液态玻璃控制组
+
+    private var controlCluster: some View {
+        GlassEffectContainer(spacing: 14) {
+            HStack(spacing: 10) {
+                if expanded {
+                    Button {
+                        reloadToken = UUID()
+                        withAnimation(.bouncy(duration: 0.35)) { expanded = false }
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 15, weight: .semibold))
+                            .frame(width: 40, height: 40)
+                    }
+                    .buttonStyle(.plain)
+                    .glassEffect(.regular.interactive(), in: Circle())
+                    .glassEffectID("refresh", in: glassNS)
+                    .transition(.scale.combined(with: .opacity))
+
+                    Button {
+                        withAnimation(.bouncy(duration: 0.35)) { expanded = false }
+                        showSettings = true
+                    } label: {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 15, weight: .semibold))
+                            .frame(width: 40, height: 40)
+                    }
+                    .buttonStyle(.plain)
+                    .glassEffect(.regular.interactive(), in: Circle())
+                    .glassEffectID("settings", in: glassNS)
+                    .transition(.scale.combined(with: .opacity))
+                }
+
+                Button {
+                    withAnimation(.bouncy(duration: 0.4)) { expanded.toggle() }
+                } label: {
+                    Image(systemName: expanded ? "xmark" : "ellipsis")
+                        .font(.system(size: 16, weight: .bold))
+                        .frame(width: 40, height: 40)
+                        .contentTransition(.symbolEffect(.replace))
+                }
+                .buttonStyle(.plain)
+                .glassEffect(.regular.interactive(), in: Circle())
+                .glassEffectID("toggle", in: glassNS)
+            }
+        }
     }
 }
+
+// MARK: - 启动闪屏
 
 struct SplashView: View {
     let brand: Color
 
     var body: some View {
         ZStack {
-            (Color(uiColor: .systemBackground)).ignoresSafeArea()
-            VStack(spacing: 18) {
+            ZStack {
+                Color(uiColor: .systemBackground)
+                RadialGradient(colors: [brand.opacity(0.35), .clear],
+                               center: .top, startRadius: 10, endRadius: 420)
+            }
+            .ignoresSafeArea()
+
+            VStack(spacing: 20) {
                 Image("Logo")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 96, height: 96)
-                    .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-                    .shadow(color: .black.opacity(0.12), radius: 14, y: 6)
+                    .frame(width: 100, height: 100)
+                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
 
-                Text("Sub-Store")
-                    .font(.system(size: 22, weight: .semibold, design: .rounded))
-
-                Text("订阅管理")
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
+                VStack(spacing: 6) {
+                    Text("Sub-Store")
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                    Text("订阅管理")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
 
                 ProgressView()
+                    .controlSize(.regular)
                     .tint(brand)
-                    .padding(.top, 4)
+                    .padding(.top, 6)
             }
         }
     }
 }
+
+// MARK: - 未配置空状态
 
 struct EmptyStateView: View {
     let brand: Color
     let action: () -> Void
 
     var body: some View {
-        VStack(spacing: 16) {
-            Image("Logo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 84, height: 84)
-                .clipShape(RoundedRectangle(cornerRadius: 19, style: .continuous))
-                .shadow(color: .black.opacity(0.1), radius: 10, y: 4)
+        VStack {
+            GlassEffectContainer(spacing: 20) {
+                VStack(spacing: 18) {
+                    Image("Logo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 88, height: 88)
+                        .clipShape(RoundedRectangle(cornerRadius: 21, style: .continuous))
 
-            Text("还没连接面板")
-                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                    VStack(spacing: 8) {
+                        Text("还没连接面板")
+                            .font(.system(size: 19, weight: .semibold, design: .rounded))
+                        Text("填入面板地址与 Basic 认证账号\n一次配置后免登录进入")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(3)
+                    }
 
-            Text("填入面板地址与 Basic 认证账号，一次配置后免登录进入")
-                .font(.system(size: 13))
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
-
-            Button(action: action) {
-                Text("开始配置")
-                    .font(.system(size: 15, weight: .semibold))
-                    .padding(.horizontal, 22)
-                    .padding(.vertical, 11)
-                    .background(brand, in: Capsule())
-                    .foregroundStyle(.white)
+                    Button(action: action) {
+                        Text("开始配置")
+                            .font(.system(size: 15, weight: .semibold))
+                            .padding(.horizontal, 26)
+                            .padding(.vertical, 13)
+                    }
+                    .buttonStyle(.glassProminent)
+                    .tint(brand)
+                }
+                .padding(28)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 30, style: .continuous))
             }
-            .padding(.top, 6)
+            .padding(.horizontal, 34)
         }
     }
 }

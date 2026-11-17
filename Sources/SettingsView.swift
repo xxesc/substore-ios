@@ -8,72 +8,27 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 18) {
-                    header
-                    card {
-                        VStack(alignment: .leading, spacing: 12) {
-                            fieldLabel("面板地址")
-                            TextField("https://example.com/", text: $config.baseURL)
-                                .textInputAutocapitalization(.never)
-                                .autocorrectionDisabled()
-                                .keyboardType(.URL)
-                                .font(.system(size: 15, design: .monospaced))
-                        }
-                    }
+            ZStack {
+                mesh.ignoresSafeArea()
 
-                    card {
-                        VStack(alignment: .leading, spacing: 14) {
-                            fieldLabel("Basic 认证")
-                            HStack {
-                                Image(systemName: "person.fill")
-                                    .foregroundStyle(.secondary)
-                                    .frame(width: 18)
-                                TextField("用户名", text: $config.username)
-                                    .textInputAutocapitalization(.never)
-                                    .autocorrectionDisabled()
-                            }
-                            Divider()
-                            HStack {
-                                Image(systemName: "key.fill")
-                                    .foregroundStyle(.secondary)
-                                    .frame(width: 18)
-                                SecureField("密码", text: $config.password)
+                ScrollView {
+                    VStack(spacing: 20) {
+                        header
+                        GlassEffectContainer(spacing: 18) {
+                            VStack(spacing: 18) {
+                                urlCard
+                                authCard
+                                footerCard
                             }
                         }
+                        primaryButton
+                        resetButton
                     }
-
-                    footer
-
-                    Button {
-                        config.save()
-                        dismiss()
-                    } label: {
-                        Text("保存并打开")
-                            .font(.system(size: 16, weight: .semibold))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(
-                                config.baseURL.isEmpty || config.password.isEmpty
-                                ? AnyShapeStyle(Color.gray.opacity(0.25))
-                                : AnyShapeStyle(brand),
-                                in: RoundedRectangle(cornerRadius: 15, style: .continuous)
-                            )
-                            .foregroundStyle(.white)
-                    }
-                    .disabled(config.baseURL.isEmpty || config.password.isEmpty)
-
-                    Button("清空配置") {
-                        config.reset()
-                    }
-                    .font(.system(size: 13))
-                    .foregroundStyle(.red.opacity(0.85))
-                    .padding(.bottom, 8)
+                    .padding(.horizontal, 18)
+                    .padding(.top, 6)
+                    .padding(.bottom, 24)
                 }
-                .padding(.horizontal, 18)
-                .padding(.top, 8)
             }
-            .background(Color(uiColor: .systemGroupedBackground))
             .navigationTitle("设置")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -81,49 +36,140 @@ struct SettingsView: View {
                     Button("关闭") { dismiss() }
                 }
             }
+            .tint(brand)
+        }
+    }
+
+    private var mesh: some View {
+        ZStack {
+            Color(uiColor: .systemBackground)
+            RadialGradient(colors: [brand.opacity(0.30), .clear],
+                           center: .topLeading, startRadius: 20, endRadius: 460)
+            RadialGradient(colors: [Color.blue.opacity(0.20), .clear],
+                           center: .bottomTrailing, startRadius: 20, endRadius: 520)
         }
     }
 
     private var header: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 12) {
             Image("Logo")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 64, height: 64)
-                .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
-                .shadow(color: .black.opacity(0.12), radius: 10, y: 4)
-            Text("连接你的 Sub-Store")
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
-            Text("凭据保存在本机 Keychain，不上传任何地方")
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
+                .frame(width: 72, height: 72)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+
+            VStack(spacing: 5) {
+                Text("连接你的 Sub-Store")
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                Text("凭据存在本机 Keychain，不上传")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+            }
         }
-        .padding(.vertical, 10)
+        .padding(.top, 6)
+        .padding(.bottom, 2)
     }
 
-    private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        content()
-            .padding(16)
-            .background(Color(uiColor: .secondarySystemGroupedBackground),
-                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    private var urlCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            label("面板地址", icon: "link")
+            TextField("https://example.com/", text: $config.baseURL)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .keyboardType(.URL)
+                .font(.system(size: 15, design: .monospaced))
+                .padding(.vertical, 11)
+                .padding(.horizontal, 13)
+                .background(.quaternary.opacity(0.35),
+                            in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .padding(18)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 
-    private func fieldLabel(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(.secondary)
+    private var authCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            label("Basic 认证", icon: "key.fill")
+
+            HStack(spacing: 10) {
+                Image(systemName: "person.fill")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 18)
+                TextField("用户名", text: $config.username)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+            }
+            .padding(.vertical, 11)
+            .padding(.horizontal, 13)
+            .background(.quaternary.opacity(0.35),
+                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+            HStack(spacing: 10) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 18)
+                SecureField("密码", text: $config.password)
+            }
+            .padding(.vertical, 11)
+            .padding(.horizontal, 13)
+            .background(.quaternary.opacity(0.35),
+                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .padding(18)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 
-    private var footer: some View {
-        HStack(alignment: .top, spacing: 8) {
-            Image(systemName: "info.circle")
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
+    private var footerCard: some View {
+        HStack(alignment: .top, spacing: 9) {
+            Image(systemName: "info.circle.fill")
+                .font(.system(size: 13))
+                .foregroundStyle(brand)
                 .padding(.top, 1)
-            Text("地址填到域名根路径即可，例如 https://ss.example.com/。App 会自动以同源方式连接后端，不需要再单独填 API 路径。")
-                .font(.system(size: 11.5))
+            Text("地址填到域名根路径即可，例如 https://ss.example.com/。App 自动以同源方式连接后端，不需要再单独填 API 路径。")
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .lineSpacing(2)
+        }
+        .padding(16)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+    }
+
+    private var primaryButton: some View {
+        Button {
+            config.save()
+            dismiss()
+        } label: {
+            Text("保存并打开")
+                .font(.system(size: 16, weight: .semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 15)
+        }
+        .buttonStyle(.glassProminent)
+        .tint(brand)
+        .disabled(config.baseURL.isEmpty || config.password.isEmpty)
+        .opacity(config.baseURL.isEmpty || config.password.isEmpty ? 0.45 : 1)
+    }
+
+    private var resetButton: some View {
+        Button("清空配置") {
+            config.reset()
+        }
+        .font(.system(size: 13, weight: .medium))
+        .foregroundStyle(.red.opacity(0.85))
+        .buttonStyle(.glass)
+    }
+
+    private func label(_ text: String, icon: String) -> some View {
+        HStack(spacing: 7) {
+            Image(systemName: icon)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(brand)
+            Text(text)
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
         }
-        .padding(.horizontal, 4)
     }
 }

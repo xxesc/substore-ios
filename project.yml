@@ -2,7 +2,7 @@ name: SubStore
 options:
   bundleIdPrefix: app.squirrel2391
   deploymentTarget:
-    iOS: "17.0"
+    iOS: "26.0"
   createIntermediateGroups: true
 settings:
   base:
