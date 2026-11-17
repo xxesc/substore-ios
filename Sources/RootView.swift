@@ -1,5 +1,4 @@
 import SwiftUI
-import WebKit
 
 struct RootView: View {
     @EnvironmentObject private var config: AppConfig
@@ -9,23 +8,9 @@ struct RootView: View {
     @State private var showSettings = false
     @State private var reloadToken = UUID()
     @State private var expanded = false
-    @State private var webRef: WKWebView?
-    @State private var showActions = false
     @Namespace private var glassNS
 
     private let brand = Color(red: 0.26, green: 0.72, blue: 0.51)
-
-    private func triggerSearch() {
-        webRef?.evaluateJavaScript(
-            "var b=document.querySelector('.navBar-left-icon--search'); if(b){b.click();}"
-        )
-    }
-
-    private func triggerAdd() {
-        webRef?.evaluateJavaScript(
-            "var b=document.querySelector('.navBar-left-icon--add'); if(b){b.click();}"
-        )
-    }
 
     var body: some View {
         ZStack {
@@ -33,11 +18,10 @@ struct RootView: View {
 
             if config.isConfigured {
                 PanelWebView(reloadToken: reloadToken,
-                         progress: $progress,
-                         onFirstLoad: {
-                             withAnimation(.easeOut(duration: 0.45)) { loaded = true }
-                         },
-                         onWebViewReady: { web in webRef = web })
+                             progress: $progress,
+                             onFirstLoad: {
+                                 withAnimation(.easeOut(duration: 0.45)) { loaded = true }
+                             })
                     .ignoresSafeArea(edges: .bottom)
                     .transition(.opacity)
             }
@@ -71,21 +55,12 @@ struct RootView: View {
                     .transition(.opacity)
             }
         }
-        .overlay(alignment: .bottomTrailing) {
+        .overlay(alignment: .topTrailing) {
             if config.isConfigured {
-                menuButton
-                    .padding(.bottom, 15)
+                controlCluster
+                    .padding(.top, 8)
                     .padding(.trailing, 12)
             }
-        }
-        .sheet(isPresented: $showActions) {
-            ActionSheetView(
-                brand: brand,
-                onRefresh: { reloadToken = UUID() },
-                onSearch: { triggerSearch() },
-                onAdd: { triggerAdd() },
-                onSettings: { showSettings = true }
-            )
         }
         .sheet(isPresented: $showSettings) {
             SettingsView().environmentObject(config)
@@ -105,16 +80,50 @@ struct RootView: View {
 
     // MARK: - 液态玻璃控制组
 
-    private var menuButton: some View {
-        Button {
-            showActions = true
-        } label: {
-            Image(systemName: "ellipsis")
-                .font(.system(size: 18, weight: .bold))
-                .frame(width: 48, height: 48)
+    private var controlCluster: some View {
+        GlassEffectContainer(spacing: 14) {
+            HStack(spacing: 10) {
+                if expanded {
+                    Button {
+                        reloadToken = UUID()
+                        withAnimation(.bouncy(duration: 0.35)) { expanded = false }
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 15, weight: .semibold))
+                            .frame(width: 40, height: 40)
+                    }
+                    .buttonStyle(.plain)
+                    .glassEffect(.regular.interactive(), in: Circle())
+                    .glassEffectID("refresh", in: glassNS)
+                    .transition(.scale.combined(with: .opacity))
+
+                    Button {
+                        withAnimation(.bouncy(duration: 0.35)) { expanded = false }
+                        showSettings = true
+                    } label: {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 15, weight: .semibold))
+                            .frame(width: 40, height: 40)
+                    }
+                    .buttonStyle(.plain)
+                    .glassEffect(.regular.interactive(), in: Circle())
+                    .glassEffectID("settings", in: glassNS)
+                    .transition(.scale.combined(with: .opacity))
+                }
+
+                Button {
+                    withAnimation(.bouncy(duration: 0.4)) { expanded.toggle() }
+                } label: {
+                    Image(systemName: expanded ? "xmark" : "ellipsis")
+                        .font(.system(size: 16, weight: .bold))
+                        .frame(width: 40, height: 40)
+                        .contentTransition(.symbolEffect(.replace))
+                }
+                .buttonStyle(.plain)
+                .glassEffect(.regular.interactive(), in: Circle())
+                .glassEffectID("toggle", in: glassNS)
+            }
         }
-        .buttonStyle(.plain)
-        .glassEffect(.regular.interactive(), in: Circle())
     }
 }
 

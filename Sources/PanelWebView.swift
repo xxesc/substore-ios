@@ -5,12 +5,11 @@ struct PanelWebView: UIViewRepresentable {
     let reloadToken: UUID
     @Binding var progress: Double
     let onFirstLoad: () -> Void
-    let onWebViewReady: (WKWebView) -> Void
 
     @EnvironmentObject private var config: AppConfig
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(config: config, progress: $progress, onFirstLoad: onFirstLoad, onReady: onWebViewReady)
+        Coordinator(config: config, progress: $progress, onFirstLoad: onFirstLoad)
     }
 
     func makeUIView(context: Context) -> WKWebView {
@@ -51,7 +50,6 @@ struct PanelWebView: UIViewRepresentable {
         web.scrollView.refreshControl = refresh
 
         context.coordinator.webView = web
-        context.coordinator.onReady(web)
         context.coordinator.startObserving()
         context.coordinator.load(config.baseURL)
         return web
@@ -73,17 +71,15 @@ struct PanelWebView: UIViewRepresentable {
         var config: AppConfig
         @Binding var progress: Double
         let onFirstLoad: () -> Void
-        let onReady: (WKWebView) -> Void
         weak var webView: WKWebView?
         var lastToken: UUID?
         private var observation: NSKeyValueObservation?
         private var didCallFirstLoad = false
 
-        init(config: AppConfig, progress: Binding<Double>, onFirstLoad: @escaping () -> Void, onReady: @escaping (WKWebView) -> Void) {
+        init(config: AppConfig, progress: Binding<Double>, onFirstLoad: @escaping () -> Void) {
             self.config = config
             self._progress = progress
             self.onFirstLoad = onFirstLoad
-            self.onReady = onReady
         }
 
         func startObserving() {
