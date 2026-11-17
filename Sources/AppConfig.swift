@@ -19,7 +19,7 @@ final class AppConfig: ObservableObject {
     }
 
     init() {
-        baseURL = UserDefaults.standard.string(forKey: urlKey) ?? "https://ss.zlf.de5.net/"
+        baseURL = UserDefaults.standard.string(forKey: urlKey) ?? ""
         username = UserDefaults.standard.string(forKey: userKey) ?? "admin"
         password = Keychain.read(service: keychainService, account: keychainAccount) ?? ""
     }
@@ -35,7 +35,7 @@ final class AppConfig: ObservableObject {
     }
 
     func reset() {
-        baseURL = "https://ss.zlf.de5.net/"
+        baseURL = ""
         username = "admin"
         password = ""
         UserDefaults.standard.set(baseURL, forKey: urlKey)
