@@ -21,6 +21,12 @@ struct RootView: View {
         )
     }
 
+    private func triggerAdd() {
+        webRef?.evaluateJavaScript(
+            "var b=document.querySelector('.navBar-left-icon--add'); if(b){b.click();}"
+        )
+    }
+
     var body: some View {
         ZStack {
             brandMesh.ignoresSafeArea()
@@ -77,6 +83,7 @@ struct RootView: View {
                 brand: brand,
                 onRefresh: { reloadToken = UUID() },
                 onSearch: { triggerSearch() },
+                onAdd: { triggerAdd() },
                 onSettings: { showSettings = true }
             )
         }

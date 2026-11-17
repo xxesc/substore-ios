@@ -5,6 +5,7 @@ struct ActionSheetView: View {
     let brand: Color
     var onRefresh: () -> Void
     var onSearch: () -> Void
+    var onAdd: () -> Void
     var onSettings: () -> Void
     @Environment(\.dismiss) private var dismiss
 
@@ -17,9 +18,12 @@ struct ActionSheetView: View {
                     .frame(width: 36, height: 5)
                     .padding(.top, 10)
 
-                HStack(spacing: 18) {
+                HStack(spacing: 16) {
                     item("刷新", "arrow.clockwise") {
                         onRefresh(); dismiss()
+                    }
+                    item("添加", "plus") {
+                        onAdd(); dismiss()
                     }
                     item("搜索", "magnifyingglass") {
                         onSearch(); dismiss()
@@ -28,7 +32,7 @@ struct ActionSheetView: View {
                         onSettings(); dismiss()
                     }
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 18)
 
                 Spacer(minLength: 0)
             }
